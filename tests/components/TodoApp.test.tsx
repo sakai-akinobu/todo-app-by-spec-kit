@@ -3,29 +3,22 @@ import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { TodoApp } from '@/components/TodoApp'
 
-// Mock the storage service
-const mockLoadTodos = vi.fn().mockResolvedValue([])
-const mockSaveTodos = vi.fn().mockResolvedValue(undefined)
-const mockClearAll = vi.fn().mockResolvedValue(undefined)
-const mockIsAvailable = vi.fn().mockReturnValue(true)
-const mockGetStorageInfo = vi.fn().mockResolvedValue({ version: '1.0.0', lastUpdated: new Date() })
+// Mock localStorage for TodoStorage
+const localStorageMock = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+}
 
-vi.mock('@/services/todoStorage', () => ({
-  TodoStorage: vi.fn().mockImplementation(() => ({
-    loadTodos: mockLoadTodos,
-    saveTodos: mockSaveTodos,
-    clearAll: mockClearAll,
-    isAvailable: mockIsAvailable,
-    getStorageInfo: mockGetStorageInfo
-  }))
-}))
+vi.stubGlobal('localStorage', localStorageMock)
 
 describe('TodoApp Component Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockLoadTodos.mockResolvedValue([])
-    mockSaveTodos.mockResolvedValue(undefined)
-    mockIsAvailable.mockReturnValue(true)
+    localStorageMock.getItem.mockReturnValue(null)
+    localStorageMock.setItem.mockImplementation(() => {})
+    localStorageMock.removeItem.mockImplementation(() => {})
   })
 
   test('should render all main components', () => {
@@ -55,6 +48,11 @@ describe('TodoApp Component Integration Tests', () => {
     // Wait for initial load to complete
     await waitFor(() => {
       expect(screen.getByText('TODOがありません')).toBeInTheDocument()
+    }, { timeout: 2000 })
+    
+    // Add small delay to ensure all effects have settled
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 100))
     })
     
     const input = screen.getByPlaceholderText('新しいTODOを入力...')
@@ -73,10 +71,12 @@ describe('TodoApp Component Integration Tests', () => {
     
     await waitFor(() => {
       expect(screen.getByText('New test todo')).toBeInTheDocument()
-    })
+    }, { timeout: 2000 })
     
     // Input should be cleared
-    expect(input).toHaveValue('')
+    await waitFor(() => {
+      expect(input).toHaveValue('')
+    })
   })
 
   test('should toggle todo completion status', async () => {
@@ -162,34 +162,56 @@ describe('TodoApp Component Integration Tests', () => {
   })
 
   test('should filter todos correctly', async () => {
-    render(<TodoApp />)
+    await act(async () => {
+      render(<TodoApp />)
+    })
+    
+    await waitFor(() => {
+      expect(screen.getByText('TODOがありません')).toBeInTheDocument()
+    })
     
     // Add multiple todos
     const input = screen.getByPlaceholderText('新しいTODOを入力...')
-    const addButton = screen.getByRole('button', { name: '追加' })
     
-    fireEvent.change(input, { target: { value: 'Active todo' } })
-    fireEvent.click(addButton)
+    await act(async () => {
+      fireEvent.change(input, { target: { value: 'Active todo' } })
+    })
     
-    fireEvent.change(input, { target: { value: 'Todo to complete' } })
-    fireEvent.click(addButton)
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '追加' }))
+    })
     
     await waitFor(() => {
       expect(screen.getByText('Active todo')).toBeInTheDocument()
+    })
+    
+    await act(async () => {
+      fireEvent.change(input, { target: { value: 'Todo to complete' } })
+    })
+    
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '追加' }))
+    })
+    
+    await waitFor(() => {
       expect(screen.getByText('Todo to complete')).toBeInTheDocument()
     })
     
-    // Complete one todo
-    const completeButtons = screen.getAllByRole('button', { name: '完了' })
-    fireEvent.click(completeButtons[0])
+    // Complete one todo (the first one which should be 'Todo to complete' as it's newest)
+    await act(async () => {
+      const completeButtons = screen.getAllByRole('button', { name: '完了' })
+      fireEvent.click(completeButtons[0])
+    })
     
     await waitFor(() => {
       expect(screen.getByRole('button', { name: '未完了' })).toBeInTheDocument()
     })
     
     // Test active filter
-    const activeFilter = screen.getByText(/未完了/)
-    fireEvent.click(activeFilter)
+    await act(async () => {
+      const activeFilter = screen.getByText(/未完了 \(1\)/)
+      fireEvent.click(activeFilter)
+    })
     
     await waitFor(() => {
       expect(screen.getByText('Active todo')).toBeInTheDocument()
@@ -197,8 +219,10 @@ describe('TodoApp Component Integration Tests', () => {
     })
     
     // Test completed filter
-    const completedFilter = screen.getByText(/完了済み/)
-    fireEvent.click(completedFilter)
+    await act(async () => {
+      const completedFilter = screen.getByText(/完了済み \(1\)/)
+      fireEvent.click(completedFilter)
+    })
     
     await waitFor(() => {
       expect(screen.queryByText('Active todo')).not.toBeInTheDocument()
