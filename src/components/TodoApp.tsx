@@ -16,6 +16,7 @@ export function TodoApp() {
   const [todos, setTodos] = useState<Todo[]>([])
   const [currentFilter, setCurrentFilter] = useState<FilterStatus>('all')
   const [storage] = useState(() => new TodoStorage())
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // 初期データロード
   useEffect(() => {
@@ -23,8 +24,10 @@ export function TodoApp() {
       try {
         const loadedTodos = await storage.loadTodos()
         setTodos(loadedTodos)
+        setIsInitialized(true)
       } catch (error) {
         console.error('Failed to load todos:', error)
+        setIsInitialized(true)
       }
     }
 
@@ -41,10 +44,11 @@ export function TodoApp() {
       }
     }
 
-    if (todos.length > 0) {
+    // 初期化完了後のみ保存実行
+    if (isInitialized) {
       saveTodos()
     }
-  }, [todos, storage])
+  }, [todos, storage, isInitialized])
 
   const handleAddTodo = (content: string) => {
     try {
