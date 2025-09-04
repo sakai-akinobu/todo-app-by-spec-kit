@@ -1,4 +1,5 @@
-import { describe, test, expect, vi } from 'vitest'
+import React from 'react'
+import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { TodoFilters } from '@/components/TodoFilters'
 import { FilterStatus } from '@/types/todo'
