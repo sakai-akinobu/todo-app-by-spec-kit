@@ -25,7 +25,7 @@ export function TodoFilters({ currentFilter, counts, onFilterChange }: TodoFilte
 
   const getButtonStyles = (filter: FilterStatus) => {
     const isActive = filter === currentFilter
-    const baseStyles = "px-4 py-2 text-sm font-bold rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-retro-blue focus:ring-opacity-50"
+    const baseStyles = "font-bold rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-retro-blue focus:ring-opacity-50"
     
     if (isActive) {
       return `${baseStyles} bg-retro-blue text-white`
@@ -35,24 +35,24 @@ export function TodoFilters({ currentFilter, counts, onFilterChange }: TodoFilte
   }
 
   return (
-    <div className="flex justify-center gap-2 mb-6">
+    <div className="flex flex-wrap justify-center gap-1 sm:gap-2 mb-4 sm:mb-6">
       <button
         onClick={() => handleFilterClick('all')}
-        className={getButtonStyles('all')}
+        className={`${getButtonStyles('all')} text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2`}
       >
         すべて ({counts.all})
       </button>
       
       <button
         onClick={() => handleFilterClick('active')}
-        className={getButtonStyles('active')}
+        className={`${getButtonStyles('active')} text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2`}
       >
         未完了 ({counts.active})
       </button>
       
       <button
         onClick={() => handleFilterClick('completed')}
-        className={getButtonStyles('completed')}
+        className={`${getButtonStyles('completed')} text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2`}
       >
         完了済み ({counts.completed})
       </button>

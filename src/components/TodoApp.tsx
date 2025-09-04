@@ -17,6 +17,7 @@ export function TodoApp() {
   const [currentFilter, setCurrentFilter] = useState<FilterStatus>('all')
   const [storage] = useState(() => new TodoStorage())
   const [isInitialized, setIsInitialized] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // 初期データロード
   useEffect(() => {
@@ -54,23 +55,37 @@ export function TodoApp() {
     try {
       const newTodo = createTodo(content)
       setTodos(prevTodos => [newTodo, ...prevTodos]) // 新しいものを先頭に追加
+      setError(null) // 成功時はエラーをクリア
     } catch (error) {
       console.error('Failed to create todo:', error)
+      setError('TODOの追加に失敗しました。再度お試しください。')
     }
   }
 
   const handleToggleTodo = (id: string) => {
-    setTodos(prevTodos => 
-      prevTodos.map(todo => 
-        todo.id === id 
-          ? { ...todo, completed: !todo.completed }
-          : todo
+    try {
+      setTodos(prevTodos => 
+        prevTodos.map(todo => 
+          todo.id === id 
+            ? { ...todo, completed: !todo.completed }
+            : todo
+        )
       )
-    )
+      setError(null)
+    } catch (error) {
+      console.error('Failed to toggle todo:', error)
+      setError('TODO状態の変更に失敗しました。')
+    }
   }
 
   const handleDeleteTodo = (id: string) => {
-    setTodos(prevTodos => prevTodos.filter(todo => todo.id !== id))
+    try {
+      setTodos(prevTodos => prevTodos.filter(todo => todo.id !== id))
+      setError(null)
+    } catch (error) {
+      console.error('Failed to delete todo:', error)
+      setError('TODOの削除に失敗しました。')
+    }
   }
 
   const handleFilterChange = (filter: FilterStatus) => {
@@ -83,19 +98,35 @@ export function TodoApp() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-retro-lightblue to-retro-blue font-retro">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 max-w-4xl">
         {/* ヘッダー */}
-        <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">
+        <header className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2 drop-shadow-lg">
             📝 レトロTODOアプリ
           </h1>
-          <p className="text-retro-lightblue text-lg">
+          <p className="text-retro-lightblue text-sm sm:text-base lg:text-lg">
             シンプルで使いやすいTODO管理ツール
           </p>
         </header>
 
         {/* メインコンテンツ */}
-        <main className="bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-lg">
+        <main className="bg-white/10 backdrop-blur-sm rounded-lg p-4 sm:p-6 shadow-lg">
+          {/* エラー表示 */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/80 text-white rounded-md backdrop-blur-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">{error}</span>
+                <button
+                  onClick={() => setError(null)}
+                  className="ml-2 text-white hover:text-gray-200 focus:outline-none"
+                  aria-label="エラーを閉じる"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
+          
           {/* TODO入力 */}
           <TodoInput onAdd={handleAddTodo} />
           
@@ -115,8 +146,8 @@ export function TodoApp() {
         </main>
 
         {/* フッター */}
-        <footer className="text-center mt-8">
-          <p className="text-white/70 text-sm">
+        <footer className="text-center mt-6 sm:mt-8">
+          <p className="text-white/70 text-xs sm:text-sm">
             Built with Next.js & TypeScript ✨
           </p>
         </footer>
